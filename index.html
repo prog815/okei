@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ОКЕИ — Общероссийский классификатор единиц измерения | поиск по кодам и обозначениям</title>
+<meta name="description" content="Онлайн-справочник ОКЕИ (ОК 015-94): мгновенный поиск кодов единиц измерения по коду, наименованию, русскому и международному обозначению. Актуальные данные Росстата.">
+<style>
+:root{
+  --bg:#f0f7f0; --card:#fff; --brand:#9FCB9F; --accent:#4E9450;
+  --accent-dark:#3d7a3f; --text:#2d3b2d; --muted:#6b7d6b; --border:#d7e8d7;
+  --s1:#4E9450; --s2:#2a9d8f; --s3:#7b6fa6;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 40px}
+
+header h1{font-size:1.5rem;margin:18px 0 4px;color:var(--accent-dark)}
+header .sub{margin:0 0 14px;color:var(--muted);font-size:.95rem}
+
+/* чипы популярных запросов */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:999px;
+  padding:5px 13px;font-size:.88rem;cursor:pointer;color:var(--accent-dark);
+  transition:background .15s,border-color .15s}
+.chip:hover{background:#e3f1e3;border-color:var(--brand)}
+
+/* липкая панель поиска */
+.panel{position:sticky;top:0;z-index:10;background:var(--bg);
+  padding:10px 0 8px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.panel-row{display:flex;gap:10px;flex-wrap:wrap}
+#q{flex:1 1 260px;min-width:0;padding:11px 14px;font-size:1rem;
+  border:2px solid var(--brand);border-radius:10px;background:var(--card);color:var(--text)}
+#q:focus{outline:none;border-color:var(--accent)}
+#sec{padding:11px 12px;font-size:.95rem;border:2px solid var(--brand);
+  border-radius:10px;background:var(--card);color:var(--text);cursor:pointer}
+.info{margin:8px 2px 0;font-size:.85rem;color:var(--muted)}
+
+/* карточки */
+#results{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;border-left:5px solid var(--muted)}
+.card.s1{border-left-color:var(--s1)}
+.card.s2{border-left-color:var(--s2)}
+.card.s3{border-left-color:var(--s3)}
+.card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.code{font-family:var(--mono);font-size:1.05rem;font-weight:700;white-space:nowrap;
+  background:#eef6ee;border:1px solid var(--border);border-radius:8px;
+  padding:3px 10px;cursor:pointer;color:var(--accent-dark)}
+.code:hover{background:var(--brand);border-color:var(--accent)}
+.badge{font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.badge.sec{color:#fff}
+.badge.sec.s1{background:var(--s1)} .badge.sec.s2{background:var(--s2)} .badge.sec.s3{background:var(--s3)}
+.badge.grp{background:#eef1f6;color:#4a5a70;border:1px solid #d8dee9}
+.pair-btn{margin-left:auto;font-size:.8rem;background:none;border:1px dashed var(--brand);
+  border-radius:8px;padding:3px 9px;cursor:pointer;color:var(--accent-dark);white-space:nowrap}
+.pair-btn:hover{background:#e3f1e3;border-style:solid}
+.name{margin:7px 0 4px;font-size:1rem}
+.syms{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sym{font-family:var(--mono);font-size:.88rem;border-radius:7px;padding:2px 9px;
+  cursor:pointer;border:1px solid var(--border);background:#f7faf7}
+.sym.ru{color:var(--accent-dark);border-color:var(--brand)}
+.sym.en{color:#4a5a70}
+.sym:hover{background:var(--brand);color:#fff}
+.sym-label{font-size:.72rem;color:var(--muted);margin-right:2px}
+mark{background:#ffe58a;border-radius:3px;padding:0 1px}
+
+/* кнопки / состояния */
+#more{display:block;margin:16px auto 0;padding:10px 22px;font-size:.95rem;
+  background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer}
+#more:hover{background:var(--accent-dark)}
+.state{padding:30px 10px;text-align:center;color:var(--muted)}
+.state.err{color:#a33}
+.state button{margin-top:10px;padding:8px 18px;border:1px solid var(--brand);
+  background:var(--card);border-radius:8px;cursor:pointer;color:var(--accent-dark)}
+
+/* футер */
+footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--border);
+  font-size:.85rem;color:var(--muted)}
+footer .stats{margin-bottom:8px}
+footer a{color:var(--accent-dark);text-decoration:none;border-bottom:1px dotted var(--brand)}
+footer a:hover{border-bottom-style:solid}
+footer .links{display:flex;gap:14px;flex-wrap:wrap}
+
+/* плавающие кнопки */
+.fab{position:fixed;right:18px;width:42px;height:42px;border-radius:50%;
+  border:1px solid var(--border);background:var(--card);color:var(--accent-dark);
+  font-size:1.15rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);
+  display:none;align-items:center;justify-content:center;z-index:20}
+.fab.show{display:flex}
+#fabUp{bottom:70px} #fabDown{bottom:18px}
+
+/* тост */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--accent-dark);color:#fff;padding:9px 18px;border-radius:999px;
+  font-size:.9rem;opacity:0;pointer-events:none;transition:all .25s;z-index:30;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:640px){
+  .wrap{padding:12px 12px 40px}
+  header h1{font-size:1.25rem}
+  .panel-row{flex-direction:column}
+  #sec{width:100%}
+  .pair-btn{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<!-- общее меню экосистемы (внешний виджет, сверху) -->
+<script src="https://prog815.github.io/common-menu/menu.js?v=2.0.0"></script>
+<common-projects-menu></common-projects-menu>
+
+<div class="wrap">
+  <header>
+    <h1>ОКЕИ — Общероссийский классификатор единиц измерения</h1>
+    <p class="sub">Мгновенный поиск по кодам, наименованиям и условным обозначениям единиц измерения (ОК 015-94)</p>
+  </header>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="panel">
+    <div class="panel-row">
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Код, название или обозначение: 796, килограмм, шт, кг, м3…">
+      <select id="sec" title="Фильтр по разделу классификатора">
+        <option value="">Все разделы</option>
+        <option value="1">1. Международные единицы</option>
+        <option value="2">2. Национальные единицы</option>
+        <option value="3">3. Четырёхзначные национальные</option>
+      </select>
+    </div>
+    <div class="info" id="info"></div>
+  </div>
+
+  <main>
+    <div class="state" id="loading">Загрузка данных справочника…</div>
+    <div class="state err" id="error" hidden>
+      Не удалось загрузить данные.
+      <br><button onclick="location.reload()">Повторить</button>
+    </div>
+    <div id="results" hidden></div>
+    <div class="state" id="nores" hidden>Ничего не найдено. Попробуйте сократить запрос.</div>
+    <button id="more" hidden>Показать ещё</button>
+  </main>
+
+  <footer>
+    <div class="stats" id="stats"></div>
+    <div class="links">
+      <a href="https://rosstat.gov.ru/opendata/7708234640-okei" target="_blank" rel="noopener">Росстат</a>
+      <a href="https://www.consultant.ru/document/cons_doc_LAW_53447/" target="_blank" rel="noopener">КонсультантПлюс</a>
+      <a href="https://base.garant.ru/179222/" target="_blank" rel="noopener">Гарант</a>
+      <a href="https://github.com/prog815/okei" target="_blank" rel="noopener">GitHub проекта</a>
+    </div>
+  </footer>
+</div>
+
+<button class="fab" id="fabUp" title="Наверх" aria-label="Наверх">↑</button>
+<button class="fab" id="fabDown" title="Вниз" aria-label="Вниз">↓</button>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+
+/* ---------- конфигурация ---------- */
+const PAGE = 20;
+const DATA_GZ = "okei.json.gz", DATA_JSON = "okei.json";
+const META_GZ = "okei_meta.json.gz", META_JSON = "okei_meta.json";
+const SECTION_NAMES = {
+  "1": "Международные",
+  "2": "Национальные",
+  "3": "Четырёхзначные национальные"
+};
+const POPULAR = ["шт","кг","т","м","м2","м3","л","ч","сут","год","руб","%","упак","компл","усл. ед"];
+
+/* ---------- состояние ---------- */
+let ALL = [];          // весь массив записей
+let VIEW = [];         // отфильтрованный/отсортированный текущий список
+let SHOWN = 0;         // сколько карточ отрендерено
+let QUERY = "";        // текущий нормализованный запрос
+let META = null;       // метаданные (могут не загрузиться — не критично)
+
+const $ = id => document.getElementById(id);
+const elQ = $("q"), elSec = $("sec"), elInfo = $("info"),
+      elRes = $("results"), elMore = $("more"), elNores = $("nores"),
+      elLoad = $("loading"), elErr = $("error"), elStats = $("stats"),
+      elToast = $("toast"), elChips = $("chips");
+
+/* ---------- утилиты ---------- */
+function norm(s){
+  return String(s == null ? "" : s).toLowerCase().replace(/ё/g,"е").replace(/\s+/g," ").trim();
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function debounce(fn, ms){
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+/* ---------- загрузка gz с fallback ---------- */
+async function fetchJson(gzUrl, jsonUrl){
+  if (typeof DecompressionStream !== "undefined"){
+    try{
+      const r = await fetch(gzUrl, {cache:"no-store"});
+      if (r.ok){
+        const ds = new DecompressionStream("gzip");
+        const text = await new Response(r.body.pipeThrough(ds)).text();
+        return JSON.parse(text);
+      }
+    }catch(e){ /* падаем на несжатый */ }
+  }
+  const r = await fetch(jsonUrl, {cache:"no-store"});
+  if (!r.ok) throw new Error("HTTP " + r.status + " для " + jsonUrl);
+  return r.json();
+}
+
+/* ---------- поиск ---------- */
+function tokenScore(t, rec, hay){
+  const c = rec.c, n = norm(rec.n), ru = norm(rec.ru), en = norm(rec.en), g = norm(rec.g);
+  if (c === t) return 100;
+  if (c.startsWith(t)) return 80;
+  if (ru === t || en === t) return 70;
+  if (ru.startsWith(t) || en.startsWith(t)) return 60;
+  if (n.startsWith(t)) return 50;
+  if (n.includes(t)) return 40;
+  if (g.includes(t)) return 30;
+  return 0;
+}
+
+function search(q, secFilter){
+  const tokens = q.split(" ").filter(Boolean);
+  const out = [];
+  for (const rec of ALL){
+    if (secFilter && rec.s !== secFilter) continue;
+    const hay = norm(rec.c + " " + rec.n + " " + rec.ru + " " + rec.en + " " + rec.g);
+    let score = 0, ok = true;
+    for (const t of tokens){
+      const s = tokenScore(t, rec, hay);
+      if (s === 0){ ok = false; break; }
+      score += s;
+    }
+    if (ok) out.push({rec, score});
+  }
+  if (!q){
+    // пустой запрос — исходный порядок (уже отсортирован по разделу и коду)
+    return ALL.filter(r => !secFilter || r.s === secFilter);
+  }
+  out.sort((a,b) => b.score - a.score ||
+        (a.rec.s - b.rec.s) ||
+        (parseInt(a.rec.c,10) - parseInt(b.rec.c,10)));
+  return out.map(x => x.rec);
+}
+
+/* ---------- подсветка ---------- */
+function hl(text, tokens){
+  const s = String(text == null ? "" : text);
+  if (!s || !tokens.length) return esc(s);
+  const low = norm(s);
+  // собираем интервалы совпадений по нормализованной строке (длина совпадает с оригиналом)
+  const marks = new Array(s.length).fill(false);
+  for (const t of tokens){
+    let i = 0;
+    while ((i = low.indexOf(t, i)) !== -1){
+      for (let k = i; k < i + t.length; k++) marks[k] = true;
+      i += t.length;
+    }
+  }
+  let res = "", open = false;
+  for (let i = 0; i < s.length; i++){
+    if (marks[i] && !open){ res += "<mark>"; open = true; }
+    if (!marks[i] && open){ res += "</mark>"; open = false; }
+    res += esc(s[i]);
+  }
+  if (open) res += "</mark>";
+  return res;
+}
+
+/* ---------- рендер ---------- */
+function makeCard(rec, tokens){
+  const card = document.createElement("div");
+  card.className = "card s" + rec.s;
+
+  const top = document.createElement("div");
+  top.className = "card-top";
+
+  const code = document.createElement("button");
+  code.className = "code";
+  code.type = "button";
+  code.innerHTML = hl(rec.c, tokens);
+  code.title = "Клик — скопировать код";
+  code.onclick = () => copy(rec.c, "Код " + rec.c + " скопирован");
+
+  const badge = document.createElement("span");
+  badge.className = "badge sec s" + rec.s;
+  badge.textContent = SECTION_NAMES[rec.s] || ("Раздел " + rec.s);
+  badge.title = "Раздел классификатора";
+
+  top.appendChild(code);
+  top.appendChild(badge);
+
+  if (rec.g){
+    const grp = document.createElement("span");
+    grp.className = "badge grp";
+    grp.innerHTML = hl(rec.g, tokens);
+    grp.title = "Подраздел (группа единиц)";
+    top.appendChild(grp);
+  }
+
+  if (rec.ru){
+    const pair = document.createElement("button");
+    pair.className = "pair-btn";
+    pair.type = "button";
+    pair.textContent = "📋 " + rec.c + "; " + rec.ru;
+    pair.title = "Скопировать код и русское обозначение";
+    pair.onclick = () => copy(rec.c + "; " + rec.ru, "Скопировано: " + rec.c + "; " + rec.ru);
+    top.appendChild(pair);
+  }
+
+  const name = document.createElement("div");
+  name.className = "name";
+  name.innerHTML = hl(rec.n, tokens);
+
+  const syms = document.createElement("div");
+  syms.className = "syms";
+  if (rec.ru){
+    const lab = document.createElement("span");
+    lab.className = "sym-label"; lab.textContent = "РУС:";
+    const b = document.createElement("span");
+    b.className = "sym ru"; b.innerHTML = hl(rec.ru, tokens);
+    b.title = "Клик — скопировать русское обозначение";
+    b.onclick = () => copy(rec.ru, "Обозначение «" + rec.ru + "» скопировано");
+    syms.appendChild(lab); syms.appendChild(b);
+  }
+  if (rec.en){
+    const lab = document.createElement("span");
+    lab.className = "sym-label"; lab.textContent = "МЕЖД:";
+    const b = document.createElement("span");
+    b.className = "sym en"; b.innerHTML = hl(rec.en, tokens);
+    b.title = "Клик — скопировать международное обозначение";
+    b.onclick = () => copy(rec.en, "Обозначение «" + rec.en + "» скопировано");
+    syms.appendChild(lab); syms.appendChild(b);
+  }
+
+  card.appendChild(top);
+  card.appendChild(name);
+  if (syms.childNodes.length) card.appendChild(syms);
+  return card;
+}
+
+function renderMore(){
+  const tokens = QUERY ? QUERY.split(" ").filter(Boolean) : [];
+  const frag = document.createDocumentFragment();
+  const end = Math.min(SHOWN + PAGE, VIEW.length);
+  for (; SHOWN < end; SHOWN++) frag.appendChild(makeCard(VIEW[SHOWN], tokens));
+  elRes.appendChild(frag);
+  updateInfo();
+}
+
+function updateInfo(){
+  const total = VIEW.length;
+  if (!QUERY){
+    elInfo.textContent = total
+      ? "Показано: " + SHOWN + " из " + total
+      : "Нет записей в выбранном разделе";
+  }else{
+    elInfo.textContent = total
+      ? "Найдено: " + total + " · Показано: " + SHOWN
+      : "";
+  }
+  elNores.hidden = !(QUERY && total === 0);
+  elRes.hidden = total === 0;
+  elMore.hidden = SHOWN >= total;
+  if (!elMore.hidden){
+    const left = total - SHOWN;
+    elMore.textContent = "Показать ещё +" + Math.min(PAGE, left) +
+      " (показано " + SHOWN + " из " + total + ")";
+  }
+}
+
+function applySearch(){
+  VIEW = search(QUERY, elSec.value);
+  SHOWN = 0;
+  elRes.innerHTML = "";
+  renderMore();
+}
+
+/* ---------- копирование + тост ---------- */
+let toastTimer = null;
+function toast(msg){
+  elToast.textContent = msg;
+  elToast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => elToast.classList.remove("show"), 1800);
+}
+function copy(text, msg){
+  const done = () => toast(msg);
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  }else{
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- футер ---------- */
+function renderFooter(){
+  const bySec = {"1":0,"2":0,"3":0};
+  for (const r of ALL) bySec[r.s] = (bySec[r.s] || 0) + 1;
+  const date = (META && META.source_date_display) ? META.source_date_display : "не определена";
+  elStats.textContent =
+    "В справочнике " + ALL.length + " записей: международных единиц — " + bySec["1"] +
+    ", национальных — " + bySec["2"] + ", четырёхзначных — " + bySec["3"] +
+    ". Дата актуальности: " + date + ".";
+}
+
+/* ---------- чипы ---------- */
+function renderChips(){
+  for (const p of POPULAR){
+    const c = document.createElement("button");
+    c.className = "chip"; c.type = "button"; c.textContent = p;
+    c.title = "Искать: " + p;
+    c.onclick = () => { elQ.value = p; QUERY = norm(p); applySearch();
+      window.scrollTo({top:0, behavior:"smooth"}); };
+    elChips.appendChild(c);
+  }
+}
+
+/* ---------- плавающие кнопки ---------- */
+const fabUp = $("fabUp"), fabDown = $("fabDown");
+function onScroll(){
+  const y = window.scrollY;
+  const atEnd = (document.documentElement.scrollHeight - y - window.innerHeight) < 100;
+  fabUp.classList.toggle("show", y > 300);
+  fabDown.classList.toggle("show", y > 300 && !atEnd);
+}
+fabUp.onclick = () => window.scrollTo({top:0, behavior:"smooth"});
+fabDown.onclick = () => window.scrollTo({top:document.documentElement.scrollHeight, behavior:"smooth"});
+window.addEventListener("scroll", onScroll, {passive:true});
+
+/* ---------- события ---------- */
+elQ.addEventListener("input", debounce(() => {
+  QUERY = norm(elQ.value);
+  applySearch();
+}, 200));
+elSec.addEventListener("change", applySearch);
+elMore.addEventListener("click", renderMore);
+
+/* ---------- старт ---------- */
+(async function init(){
+  renderChips();
+  try{
+    const [data, meta] = await Promise.all([
+      fetchJson(DATA_GZ, DATA_JSON).catch(e => { throw e; }),
+      fetchJson(META_GZ, META_JSON).catch(() => null)   // мета не критична
+    ]);
+    META = meta;
+    ALL = Array.isArray(data) ? data : [];
+    if (!ALL.length) throw new Error("пустой набор данных");
+    elLoad.hidden = true;
+    renderFooter();
+    applySearch();   // пустой запрос → первая порция всех
+  }catch(e){
+    console.error(e);
+    elLoad.hidden = true;
+    elErr.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
