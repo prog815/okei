@@ -1,0 +1,97 @@
+name: Daily OKEI Update
+
+on:
+  schedule:
+    - cron: '0 13 * * *'      # 13:00 UTC = 16:00 МСК (разнесено с ОКПД2/ОКВЭД2/ОКТМО)
+  workflow_dispatch:          # ручной запуск
+
+jobs:
+  sync-and-trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write         # встроенный токен Actions для коммита
+    env:
+      # API-токен Kaggle НОВОГО образца (CLI >= 1.8.0).
+      # В репозитории секрет называется KAGGLE_API_TOKEN_OKEI, внутри него чистый токен.
+      # Kaggle CLI читает переменную окружения KAGGLE_API_TOKEN напрямую.
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN_OKEI }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Kaggle CLI с поддержкой API-токенов (>= 1.8.0)
+        run: |
+          pip install -q --upgrade kaggle
+          kaggle --version
+          python - <<'EOF'
+          import re, subprocess
+          out = subprocess.check_output(["kaggle", "--version"], text=True).strip()
+          m = re.search(r"(\d+)\.(\d+)", out)
+          assert m and tuple(map(int, m.groups())) >= (1, 8), \
+              f"нужен kaggle CLI >= 1.8.0 для API-токенов, получен: {out}"
+          print("OK: kaggle CLI поддерживает API-токены")
+          EOF
+
+      - name: Download latest kernel output
+        run: |
+          mkdir -p ./output
+          kaggle kernels output eavprog/okei-classifier-downloader -p ./output
+          echo "Содержимое output:"
+          find ./output -maxdepth 4 -type f | head -30
+          echo ""
+          echo "--- Попытка показать лог/диагностику тетрадки (если есть) ---"
+          for f in ./output/*.log ./output/*.txt ./output/__notebook*.ipynb; do
+            [ -f "$f" ] && { echo ">>> $f (last 50 lines) >>>"; tail -n 50 "$f"; echo "<<< $f <<<"; echo ""; }
+          done || true
+
+      - name: Copy web files to repo root (не падает, ставит флаг)
+        id: copy
+        run: |
+          # ВАЖНО: тетрадка ОКЕИ пишет ВСЕ публикуемые артефакты В КОРЕНЬ /kaggle/working
+          # (в отличие от ОКТМО, где они лежат в подпапке oktmo_data/web).
+          # Поэтому SRC = ./output, а не ./output/okei_data/web.
+          SRC=./output
+          MISSING=0
+          for f in okei.json okei.json.gz okei_meta.json okei_meta.json.gz; do
+            if [ -f "$SRC/$f" ]; then
+              cp "$SRC/$f" "./$f"
+              echo "copied $f"
+            else
+              echo "::warning::MISSING $f в output тетрадки (тетрадка, вероятно, упала)"
+              MISSING=$((MISSING+1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "❌ Отсутствует $MISSING из 4 файлов — коммит пропущен, сайт остаётся на последней хорошей версии"
+            echo "FILES_OK=false" >> "$GITHUB_ENV"
+          else
+            echo "✅ Все 4 файла на месте"
+            echo "FILES_OK=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Commit and push changes
+        if: env.FILES_OK == 'true'
+        run: |
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add okei.json okei.json.gz okei_meta.json okei_meta.json.gz
+          if git diff --cached --quiet; then
+            echo "✅ Изменений нет — данные уже актуальны"
+          else
+            SOURCE_DATE=$(python -c "import json;print(json.load(open('okei_meta.json')).get('source_date','?'))")
+            git commit -m "Auto-update: OKEI data from kernel output (source $SOURCE_DATE) [skip ci]"
+            git push
+            echo "✅ Изменения запушены"
+          fi
+
+      - name: Trigger new notebook run (fire-and-forget, всегда)
+        if: always()
+        run: |
+          mkdir -p ./nb
+          kaggle kernels pull eavprog/okei-classifier-downloader -p ./nb --metadata
+          kaggle kernels push -p ./nb
+          echo "✅ Тетрадка перезапущена (round-trip); workflow не ждёт её завершения"
