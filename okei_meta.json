@@ -1,0 +1,38 @@
+{
+  "classifier_name": "ОКЕИ (ОК 015-94)",
+  "classifier_full_name": "Общероссийский классификатор единиц измерения",
+  "source_date": "2024-12-03",
+  "source_date_iso": "2024-12-03",
+  "source_date_display": "3 декабря 2024",
+  "source_date_origin": "source_url_date",
+  "generated_at": "2026-10-14T15:32:29.390890+00:00",
+  "generated_date": "2026-10-14",
+  "version": "2024-12-03",
+  "source_page": "https://rosstat.gov.ru/opendata/7708234640-okei",
+  "source_file_url": "https://rosstat.gov.ru/opendata/7708234640-okei/data-20241203T1712-structure-20180402T1704.csv",
+  "source_filename": "data-20241203T1712-structure-20180402T1704.csv",
+  "source_sha256": "8683b1570d611b7515e491f78b4ba72d9bfe385c53b874d6142a563da9121406",
+  "records_count": 543,
+  "sections_count": 3,
+  "sections": {
+    "1": 167,
+    "2": 278,
+    "3": 98
+  },
+  "has_ru_symbols": 543,
+  "has_en_symbols": 543,
+  "data_hash": "078ee04c3e8d7486",
+  "data_hash_full": "078ee04c3e8d74867c8b357ce84774ca0d71317644488e75abd1fee4abb3d231",
+  "file_size_json": 77596,
+  "file_size_json_gz": 10582,
+  "record_format": {
+    "c": "код (3-4 цифры строкой)",
+    "n": "наименование",
+    "ru": "русское условное обозначение (может быть пустым)",
+    "en": "международное обозначение (может быть пустым)",
+    "s": "раздел (1=международные, 2=национальные, 3=экономические/специальные)",
+    "g": "группа/подраздел"
+  },
+  "record_format_description": "Массив объектов. Сортировка: по разделу, затем по числовому коду.",
+  "warnings": []
+}
