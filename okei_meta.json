@@ -1,38 +1,108 @@
 {
+  "classifier": "okei",
   "classifier_name": "ОКЕИ (ОК 015-94)",
-  "classifier_full_name": "Общероссийский классификатор единиц измерения",
+  "classifier_full_name": "Общероссийский классификатор единиц измерения (ОК 015-94, МК 002-97)",
+  "source_type": "rosstat_csv_open_data",
+  "source_page": "https://rosstat.gov.ru/opendata/7708234640-okei",
+  "source_url": "https://rosstat.gov.ru/opendata/7708234640-okei/data-20241203T1712-structure-20180402T1704.csv",
+  "source_filename": "data-20241203T1712-structure-20180402T1704.csv",
+  "source_sha256": "8683b1570d611b7515e491f78b4ba72d9bfe385c53b874d6142a563da9121406",
+  "source_size_bytes": 29996,
+  "fetched_at": "2026-10-25T15:50:33",
+  "source_encoding_used": "utf-8-sig",
+  "source_files": [
+    {
+      "name": "data-20241203T1712-structure-20180402T1704.csv",
+      "size_bytes": 29996
+    }
+  ],
   "source_date": "2024-12-03",
   "source_date_iso": "2024-12-03",
   "source_date_display": "3 декабря 2024",
-  "source_date_origin": "source_url_date",
-  "generated_at": "2026-10-23T17:45:39.081136+00:00",
-  "generated_date": "2026-10-23",
+  "current_change": "28/2024",
+  "change_display": "С учетом изменения 28/2024 от 3 декабря 2024",
+  "generated_at": "2026-10-25T15:50:34",
+  "generated_date": "2026-10-25",
   "version": "2024-12-03",
-  "source_page": "https://rosstat.gov.ru/opendata/7708234640-okei",
-  "source_file_url": "https://rosstat.gov.ru/opendata/7708234640-okei/data-20241203T1712-structure-20180402T1704.csv",
-  "source_filename": "data-20241203T1712-structure-20180402T1704.csv",
-  "source_sha256": "8683b1570d611b7515e491f78b4ba72d9bfe385c53b874d6142a563da9121406",
+  "provenance": "Росстат · data-20241203T1712 · С учетом изменения 28/2024",
   "records_count": 543,
   "sections_count": 3,
-  "sections": {
-    "1": 167,
-    "2": 278,
-    "3": 98
-  },
+  "sections": [
+    {
+      "id": "1",
+      "name": "1 МЕЖДУНАРОДНЫЕ ЕДИНИЦЫ ИЗМЕРЕНИЯ, ВКЛЮЧЕННЫЕ В ОКЕИ"
+    },
+    {
+      "id": "2",
+      "name": "2. НАЦИОНАЛЬНЫЕ ЕДИНИЦЫ ИЗМЕРЕНИЯ, ВКЛЮЧЕННЫЕ В ОКЕИ"
+    },
+    {
+      "id": "3",
+      "name": "3. ЧЕТЫРЕХЗНАЧНЫЕ НАЦИОНАЛЬНЫЕ ЕДИНИЦЫ ИЗМЕРЕНИЯ, ВКЛЮЧЕННЫЕ В ОКЕИ"
+    }
+  ],
+  "group_count": 17,
   "has_ru_symbols": 543,
   "has_en_symbols": 543,
-  "data_hash": "078ee04c3e8d7486",
-  "data_hash_full": "078ee04c3e8d74867c8b357ce84774ca0d71317644488e75abd1fee4abb3d231",
-  "file_size_json": 77596,
-  "file_size_json_gz": 10582,
-  "record_format": {
-    "c": "код (3-4 цифры строкой)",
-    "n": "наименование",
-    "ru": "русское условное обозначение (может быть пустым)",
-    "en": "международное обозначение (может быть пустым)",
-    "s": "раздел (1=международные, 2=национальные, 3=экономические/специальные)",
-    "g": "группа/подраздел"
+  "data_hash": "285684eba75671d4",
+  "data_hash_full": "285684eba75671d4295c6c3ee7a599e0d60b5ea12ab77cb551c9fb06db424d08",
+  "json_size_bytes": 78055,
+  "json_size_kb": 76.2,
+  "gz_size_bytes": 10680,
+  "gz_size_kb": 10.4,
+  "record_format": "{c,n,ru,en,s,g,syn?}",
+  "record_format_description": "c — код (3–4 цифры); n — наименование; ru — русское условное обозначение; en — международное обозначение; s — раздел (1/2/3); g — подраздел/группа; syn — массив синонимов из источника `;^` (опционально)",
+  "symbols_source": "internal_normalized_reference",
+  "primary_sources": [
+    {
+      "name": "Росстат",
+      "url": "https://rosstat.gov.ru/opendata/7708234640-okei",
+      "role": "primary"
+    },
+    {
+      "name": "КонсультантПлюс",
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_53447/",
+      "role": "secondary"
+    },
+    {
+      "name": "ГАРАНТ",
+      "url": "https://base.garant.ru/179222/",
+      "role": "secondary"
+    }
+  ],
+  "publish_allowed": true,
+  "critical_errors": [],
+  "warnings": [],
+  "presence_guard": {
+    "version": "okei_v1",
+    "required_codes": [
+      "796",
+      "166",
+      "006",
+      "113",
+      "055",
+      "112",
+      "356",
+      "383",
+      "744"
+    ],
+    "missing_codes": []
   },
-  "record_format_description": "Массив объектов. Сортировка: по разделу, затем по числовому коду.",
-  "warnings": []
+  "presence_guard_version": "okei_v1",
+  "parsed_count": 543,
+  "declared_count": null,
+  "parsed_vs_declared": "N/A: source does not provide declared_count",
+  "parse_counters": {
+    "total_rows": 543,
+    "name_had_nbsp": 0,
+    "name_had_replacement": 0,
+    "name_had_control": 0,
+    "name_had_whitespace_collapsed": 0
+  },
+  "subject_overrides_applied": [],
+  "subject_morphology_normalized": 0,
+  "aliases_source": null,
+  "source_meta_created": "2018-09-05",
+  "source_meta_modified": "2024-12-03",
+  "source_meta_valid_until": "2024-12-31"
 }
