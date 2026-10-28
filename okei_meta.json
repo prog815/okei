@@ -8,7 +8,7 @@
   "source_filename": "data-20241203T1712-structure-20180402T1704.csv",
   "source_sha256": "8683b1570d611b7515e491f78b4ba72d9bfe385c53b874d6142a563da9121406",
   "source_size_bytes": 29996,
-  "fetched_at": "2026-10-26T19:04:50",
+  "fetched_at": "2026-10-27T18:35:33",
   "source_encoding_used": "utf-8-sig",
   "source_files": [
     {
@@ -21,8 +21,8 @@
   "source_date_display": "3 декабря 2024",
   "current_change": "28/2024",
   "change_display": "С учетом изменения 28/2024 от 3 декабря 2024",
-  "generated_at": "2026-10-26T19:04:51",
-  "generated_date": "2026-10-26",
+  "generated_at": "2026-10-27T18:35:34",
+  "generated_date": "2026-10-27",
   "version": "2024-12-03",
   "provenance": "Росстат · data-20241203T1712 · С учетом изменения 28/2024",
   "records_count": 543,
