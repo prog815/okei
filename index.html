@@ -118,13 +118,6 @@
     background:var(--panel); color:var(--ink); outline:none; cursor:pointer;
   }
   .searchbar select:focus{border-color:var(--brand)}
-  
-  .btn-clear-filter {
-    padding:12px 16px; font-size:14px; font-weight:500; border-radius:var(--radius);
-    border:1px solid var(--line); background:var(--panel); color:var(--ink);
-    cursor:pointer; transition:background .2s;
-  }
-  .btn-clear-filter:hover { background:var(--accent); border-color:var(--brand); color:var(--brand-d);}
 
   .meta-line{
     display:flex; justify-content:space-between; align-items:center;
@@ -290,8 +283,8 @@
     .klassik-banner{padding:4px 8px}
     .wrap{padding:0 12px}
     .name{font-size:16px}
-    .searchbar input[type=text], .searchbar select, .btn-clear-filter { width: 100%; flex: 1 1 100%; }
-    .card-top { flex-direction: column; }
+    .searchbar input[type=text], .searchbar select { width: 100%; flex: 1 1 100%; }
+    .row1 { flex-direction: column; }
     .badges { justify-content: flex-start; margin-top: 8px; }
   }
 </style>
@@ -333,14 +326,12 @@
         <option value="">Все группы</option>
         <!-- Заполняется через JS -->
       </select>
-
-      <button id="btn-reset" class="btn-clear-filter" type="button" title="Очистить все фильтры">Сбросить</button>
     </div>
   </div>
 
   <div class="meta-line">
     <div class="count" id="count">Загрузка...</div>
-    <div class="clear-link" id="clear-all" style="display:none" title="Сбросить поиск">Очистить поиск</div>
+    <div class="clear-link" id="clear-all" style="display:none" title="Сбросить поиск и фильтры">Очистить поиск</div>
   </div>
 
   <!-- Загрузка: спиннер + анимация -->
@@ -370,7 +361,7 @@
         <a href="https://www.consultant.ru/document/cons_doc_LAW_53447/" target="_blank" rel="noopener">КонсультантПлюс</a> · 
         <a href="https://base.garant.ru/179222/" target="_blank" rel="noopener">ГАРАНТ</a> · 
         <a href="https://docs.cntd.ru/document/9055125" target="_blank" rel="noopener">Кодекс</a> · 
-        <span title="Исходный код и описание справочника" style="color:var(--muted); cursor:default;">О справочнике</span>
+        <a href="https://github.com/prog815/okei" target="_blank" rel="noopener">О справочнике</a>
       </div>
       <div>
         <div class="row-label">Экосистема проектов:</div>
@@ -406,11 +397,12 @@
   var view = { list: [], shown: 0 };
   var loadingInterval = null;
 
+  var SECTION_NAMES = { "1": "Международные", "2": "Национальные", "3": "Четырехзначные национальные" };
+
   var els = {
     q: document.getElementById('q'),
     sec: document.getElementById('sec'),
     grp: document.getElementById('grp'),
-    btnReset: document.getElementById('btn-reset'),
     clearAll: document.getElementById('clear-all'),
     count: document.getElementById('count'),
     status: document.getElementById('status'),
@@ -461,7 +453,6 @@
   function highlight(text, tokens) {
     if (!tokens || !tokens.length || !text) return esc(text);
     var html = esc(text);
-    // Сортируем токены по убыванию длины, чтобы избежать конфликтов подсветки
     var sortedTokens = tokens.slice().sort(function(a,b){ return b.length - a.length; });
     for (var i=0; i<sortedTokens.length; i++) {
       var t = sortedTokens[i];
@@ -494,7 +485,9 @@
   function updateClearVisibility() {
     var hasQuery = String(els.q.value || '').length > 0;
     var hasCode = !!activeDeepLinkCode;
-    els.clearAll.style.display = (hasQuery || hasCode) ? 'block' : 'none';
+    var hasSec = els.sec.value !== '';
+    var hasGrp = els.grp.value !== '';
+    els.clearAll.style.display = (hasQuery || hasCode || hasSec || hasGrp) ? 'block' : 'none';
   }
 
   function populateGroups() {
@@ -504,10 +497,7 @@
     }
     var sortedGroups = Object.keys(groups).sort(function(a,b){ return a.localeCompare(b, 'ru'); });
     
-    // Сохраняем текущее значение, если есть
     var currentVal = els.grp.value;
-    
-    // Очищаем всё, кроме первой опции
     while (els.grp.options.length > 1) {
       els.grp.remove(1);
     }
@@ -531,13 +521,11 @@
       var base = location.pathname.replace(/index\.html$/, '');
       if(base.charAt(base.length - 1) !== '/') base += '/';
 
-      // Только .gz, без fallback на .json
       var raw = await loadJsonGz(base + 'okei.json.gz');
       META = await loadJsonGz(base + 'okei_meta.json.gz');
 
       if(!Array.isArray(raw)) throw new Error('bad data shape');
 
-      // Маппинг полей ОКЕИ: c, n, ru, en, s, g, syn?
       DATA = raw.map(function(it) {
         var n = String(it.n || '');
         var ru = String(it.ru || '');
@@ -562,7 +550,6 @@
       populateGroups();
 
       if (META) {
-        // Футер
         var s1 = DATA.filter(function(x){return x.s === '1'}).length;
         var s2 = DATA.filter(function(x){return x.s === '2'}).length;
         var s3 = DATA.filter(function(x){return x.s === '3'}).length;
@@ -623,10 +610,8 @@
           var isDigit = /^\d+$/.test(t);
           
           if (isDigit) {
-             // Если запрос начинается с цифр — строго префиксный поиск по коду
              if (!r.c.startsWith(t)) return false;
           } else {
-             // Иначе поиск по всем остальным полям
              if (r._text.indexOf(t) === -1) return false;
           }
         }
@@ -636,7 +621,6 @@
       view.list = pool.slice();
     }
 
-    // Сортировка по коду
     view.list.sort(function(a, b) {
       return a.c.localeCompare(b.c, 'ru', { numeric: true });
     });
@@ -670,7 +654,7 @@
     var total = view.list.length;
     if(total === 0){
       if (activeDeepLinkCode) {
-        els.results.innerHTML = '<div style="padding:32px 4px;text-align:center;color:var(--muted)">Код не найден. Возможно, запись удалена из реестра.<br><br>Нажмите «Очистить», чтобы увидеть весь реестр.</div>';
+        els.results.innerHTML = '<div style="padding:32px 4px;text-align:center;color:var(--muted)">Код не найден. Возможно, запись удалена из реестра.<br><br>Нажмите «Очистить поиск», чтобы увидеть весь реестр.</div>';
       } else {
         els.results.innerHTML = '<div style="padding:32px 4px;text-align:center;color:var(--muted)">Ничего не найдено. Попробуйте изменить запрос или сбросить фильтры.</div>';
       }
@@ -697,6 +681,8 @@
     var lines = [r.c + ' — ' + r.n];
     if (r.ru) lines.push('РУС: ' + r.ru);
     if (r.en) lines.push('МЕЖД: ' + r.en);
+    if (r.s) lines.push('Раздел: ' + (SECTION_NAMES[r.s] || r.s));
+    if (r.g) lines.push('Группа: ' + r.g);
     lines.push('Ссылка: ' + url);
     return lines.join('\n');
   }
@@ -720,7 +706,7 @@
       el.setAttribute('catalog', 'okei');
       el.setAttribute('title', 'ОКЕИ: ' + code + ' — ' + nameText);
       el.setAttribute('text', fullText);
-      el.setAttribute('url', ''); // Пустой URL, чтобы share.js не добавлял ссылку внизу
+      el.setAttribute('url', ''); 
 
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -738,14 +724,11 @@
     customElements.whenDefined('klassik-share').then(bindShareButtons);
   }
 
-  var SECTION_NAMES = { "1": "Международные", "2": "Национальные", "3": "Четырехзначные национальные" };
-
   function cardHTML(r, queryTokens){
     var isHighlight = (r.c === activeDeepLinkCode);
     
     var titleHtml = highlight(r.n, queryTokens);
 
-    // Бейджи
     var badgesHtml = '';
     if (r.s) {
       badgesHtml += '<span class="badge sec s' + r.s + ' clickable" data-sec="' + r.s + '" title="Клик — показать только раздел ' + r.s + '">' + (SECTION_NAMES[r.s] || 'Раздел ' + r.s) + '</span>';
@@ -754,7 +737,6 @@
       badgesHtml += '<span class="badge grp clickable" data-grp="' + esc(r.g) + '" title="Клик — показать все единицы группы «' + esc(r.g) + '»">' + highlight(r.g, queryTokens) + '</span>';
     }
 
-    // Символы
     var symbolsHtml = '';
     if (r.ru) {
       symbolsHtml += '<div class="sym-badge" data-copy="' + esc(r.ru) + '" title="Скопировать русское обозначение"><span class="lbl">РУС:</span> <span class="val">' + highlight(r.ru, queryTokens) + '</span></div>';
@@ -765,7 +747,7 @@
 
     return '<article class="card s' + (r.s || '1') + (isHighlight ? ' highlight' : '') + '" title="Карточка: ' + esc(r.n) + '">' +
       '<div class="row1">' +
-        '<button type="button" class="code-btn" data-copy="' + r.c + '" data-code="' + r.c + '" title="Скопировать код и открыть ссылку">' + highlight(r.c, queryTokens) + '</button>' +
+        '<button type="button" class="code-btn" data-copy="' + r.c + '" data-code="' + r.c + '" title="Скопировать код">' + highlight(r.c, queryTokens) + '</button>' +
         '<div class="badges">' + badgesHtml + '</div>' +
       '</div>' +
       '<div class="name">' + titleHtml + '</div>' +
@@ -808,7 +790,6 @@
   els.sec.addEventListener('change', function() {
     activeDeepLinkCode = null;
     clearCodeFromUrl();
-    // Сбрасываем группу при смене раздела
     els.grp.value = '';
     runSearch();
   });
@@ -816,7 +797,6 @@
   els.grp.addEventListener('change', function() {
     activeDeepLinkCode = null;
     clearCodeFromUrl();
-    // Сбрасываем раздел при смене группы
     els.sec.value = '';
     runSearch();
   });
@@ -831,7 +811,6 @@
     els.q.focus();
   }
 
-  els.btnReset.addEventListener('click', resetAllAction);
   els.clearAll.addEventListener('click', resetAllAction);
   
   els.more.addEventListener('click', appendPage);
@@ -839,7 +818,6 @@
   els.results.addEventListener('click', function(ev){
     var target = ev.target;
 
-    // Обработка клика по бейджу раздела
     var badgeSec = target.closest('.badge.sec');
     if (badgeSec) {
       els.sec.value = badgeSec.getAttribute('data-sec');
@@ -851,7 +829,6 @@
       return;
     }
 
-    // Обработка клика по бейджу группы
     var badgeGrp = target.closest('.badge.grp');
     if (badgeGrp) {
       els.grp.value = badgeGrp.getAttribute('data-grp');
@@ -863,7 +840,6 @@
       return;
     }
 
-    // Обработка клика по коду (копировать + ссылка)
     var codeBtn = target.closest('.code-btn');
     if (codeBtn) {
       var c = codeBtn.getAttribute('data-code');
@@ -876,7 +852,6 @@
       return;
     }
 
-    // Обработка клика по символам
     var symBadge = target.closest('.sym-badge');
     if (symBadge) {
       var text = symBadge.getAttribute('data-copy');
@@ -888,7 +863,6 @@
       return;
     }
 
-    // Обработка клика по кнопке "Поделиться" (fallback, если share.js не загрузился)
     var btnShare = target.closest('.btn-share-fallback');
     if(btnShare) {
       var code = btnShare.getAttribute('data-code');
@@ -930,7 +904,6 @@
   els.fabUp.addEventListener('click', function(){ window.scrollTo({ top: 0, behavior: 'smooth' }); });
   els.fabDown.addEventListener('click', function(){ window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); });
 
-  // Обработка кнопки "Назад" в браузере
   window.addEventListener('popstate', function() {
     var urlParams = new URLSearchParams(window.location.search);
     var codeParam = urlParams.get('code');
