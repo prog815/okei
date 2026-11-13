@@ -1,8 +1,8 @@
-name: Daily OKEI Update
+name: Weekly OKEI Update
 
 on:
   schedule:
-    - cron: '0 13 * * *'      # 13:00 UTC = 16:00 МСК (разнесено с ОКПД2/ОКВЭД2/ОКТМО)
+    - cron: '37 6 * * 1'      # 06:37 UTC = 09:37 МСК, понедельник (слот ОКЕИ из §3.2)
   workflow_dispatch:          # ручной запуск
 
 jobs:
@@ -47,26 +47,26 @@ jobs:
             [ -f "$f" ] && { echo ">>> $f (last 50 lines) >>>"; tail -n 50 "$f"; echo "<<< $f <<<"; echo ""; }
           done || true
 
-      - name: Detect SRC and copy web files
+      - name: Detect SRC and copy web files (.gz only)
         id: copy
         run: |
-          # Авто-детект: okei_data/web (стандарт v-next) → web (фоллбэк).
-          # Голый ./output запрещён (§11 стандарта).
+          # Авто-детект по §3.1: okei_data/web (стандарт) → web (фоллбэк).
+          # Публикуются ТОЛЬКО .gz (fallback .json убран, §2.10).
           SRC=""
           for cand in "./output/okei_data/web" "./output/web"; do
-            if [ -f "$cand/okei.json" ]; then
+            if [ -f "$cand/okei.json.gz" ]; then
               SRC="$cand"
               break
             fi
           done
           if [ -z "$SRC" ]; then
-            echo "::warning::okei.json не найден ни в ./output/okei_data/web, ни в ./output/web"
+            echo "::warning::okei.json.gz не найден ни в ./output/okei_data/web, ни в ./output/web"
             echo "FILES_OK=false" >> "$GITHUB_ENV"
             exit 0
           fi
           echo "SRC=$SRC"
           MISSING=0
-          for f in okei.json okei.json.gz okei_meta.json okei_meta.json.gz; do
+          for f in okei.json.gz okei_meta.json.gz; do
             if [ -f "$SRC/$f" ]; then
               cp "$SRC/$f" "./$f"
               echo "copied $f"
@@ -76,21 +76,21 @@ jobs:
             fi
           done
           if [ "$MISSING" -gt 0 ]; then
-            echo "❌ Отсутствует $MISSING из 4 файлов — коммит пропущен"
+            echo "❌ Отсутствует $MISSING из 2 .gz файлов — коммит пропущен, сайт остаётся на последней хорошей версии"
             echo "FILES_OK=false" >> "$GITHUB_ENV"
           else
-            echo "✅ Все 4 файла на месте"
+            echo "✅ Оба .gz файла на месте"
             echo "FILES_OK=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Check metadata
+      - name: Check metadata (META_OK)
         id: meta
         if: env.FILES_OK == 'true'
         run: |
           python - <<'EOF'
-          import json, hashlib, os, re
+          import gzip, hashlib, json, os, re
 
-          with open("okei_meta.json", "r", encoding="utf-8") as f:
+          with gzip.open("okei_meta.json.gz", "rt", encoding="utf-8") as f:
               m = json.load(f)
 
           ok = True
@@ -107,9 +107,16 @@ jobs:
               ok = False
               reasons.append(f"critical_errors={ce}")
 
-          # 3. Сверка data_hash_full с фактическим sha256 okei.json
-          with open("okei.json", "rb") as f:
-              actual_full = hashlib.sha256(f.read()).hexdigest()
+          # 3. records_count > 0
+          rc = m.get("records_count")
+          if not isinstance(rc, int) or rc <= 0:
+              ok = False
+              reasons.append(f"records_count={rc}")
+
+          # 4. Сверка data_hash_full с фактическим sha256 распакованного okei.json
+          with gzip.open("okei.json.gz", "rb") as f:
+              content = f.read()
+          actual_full = hashlib.sha256(content).hexdigest()
           declared_full = m.get("data_hash_full")
           if not declared_full:
               reasons.append("data_hash_full отсутствует в мете (warning, не блокирует)")
@@ -122,7 +129,7 @@ jobs:
                   f"data_hash_full mismatch: meta={declared_full[:16]}… actual={actual_full[:16]}…"
               )
 
-          # 4. Сверка data_hash (16) с префиксом sha256
+          # 5. Сверка data_hash (16) с префиксом sha256
           declared_short = m.get("data_hash")
           if declared_short and declared_short != actual_full[:16]:
               ok = False
@@ -131,7 +138,7 @@ jobs:
               )
 
           if ok:
-              print("✓ Мета OK: publish_allowed=true, critical_errors=[], data_hash_full совпадает")
+              print("✓ META_OK: publish_allowed=true, critical_errors=[], records_count>0, data_hash_full совпадает")
               for r in reasons:
                   print(f"  ⚠ {r}")
               with open(os.environ["GITHUB_ENV"], "a") as env:
@@ -149,17 +156,17 @@ jobs:
         run: |
           git config --local user.email "github-actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add okei.json okei.json.gz okei_meta.json okei_meta.json.gz
+          git add okei.json.gz okei_meta.json.gz
           if git diff --cached --quiet; then
             echo "✅ Изменений нет — данные уже актуальны"
           else
-            SOURCE_DATE=$(python -c 'import json;m=json.load(open("okei_meta.json"));print(m.get("source_date") or m.get("effective_date") or m.get("prepared_date") or m.get("generated_at") or "?")')
-            git commit -m "chore(data): auto-update OKEI ${SOURCE_DATE}"
+            SOURCE_DATE=$(python -c 'import gzip,json;m=json.load(gzip.open("okei_meta.json.gz","rt",encoding="utf-8"));print(m.get("source_date") or m.get("effective_date") or m.get("prepared_date") or m.get("generated_at") or "?")')
+            git commit -m "Auto-update: okei data (source ${SOURCE_DATE}) [skip ci]"
             git push
             echo "✅ Изменения запушены (source=${SOURCE_DATE})"
           fi
 
-      - name: Trigger new notebook run (fire-and-forget, всегда)
+      - name: Trigger new notebook run (fire-and-forget, always)
         if: always()
         run: |
           mkdir -p ./nb
